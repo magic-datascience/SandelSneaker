@@ -26,115 +26,115 @@ ytrain = ytrain.squeeze()
 
 # #####################  Feature Transformations!  ######################################
 
-# xtrain = xtrain.to_numpy()
+xtrain = xtrain.to_numpy()
 
-# # add all the pixels together in one row of the image and then square that value- then take the max value
-# # hopefully this can indicate if there are any long bright white strips going though the image with is more 
-# # common in shoes
-# whitestrip_detect_cols = np.zeros((len(ytrain),28))
+# add all the pixels together in one row of the image and then square that value- then take the max value
+# hopefully this can indicate if there are any long bright white strips going though the image with is more 
+# common in shoes
+whitestrip_detect_cols = np.zeros((len(ytrain),28))
 
-# for i in range(0,784,28):
+for i in range(0,784,28):
     
-#     whitestrip_detect_cols[:,int(i/28) ] = np.square(np.sum(xtrain[:,i:i+28], axis = 1))
+    whitestrip_detect_cols[:,int(i/28) ] = np.square(np.sum(xtrain[:,i:i+28], axis = 1))
     
-# whitestrip_detect_col = np.max(whitestrip_detect_cols, axis = 1)
+whitestrip_detect_col = np.max(whitestrip_detect_cols, axis = 1)
 
-# whitestrip_detect_col = whitestrip_detect_col.reshape(-1, 1)
+whitestrip_detect_col = whitestrip_detect_col.reshape(-1, 1)
 
-# #normalize
-# norm = pre.Normalizer(norm = 'max')
+#normalize
+norm = pre.Normalizer(norm = 'max')
 
-# horz_whitestrip_detect_col = norm.transform(whitestrip_detect_col.T).T
+horz_whitestrip_detect_col = norm.transform(whitestrip_detect_col.T).T
 
-# # Calculate Column for the average value of all pixels in each photo
+# Calculate Column for the average value of all pixels in each photo
 
-# mean_col = xtrain.mean(axis = 1)
+mean_col = xtrain.mean(axis = 1)
 
-# mean_col = np.expand_dims(mean_col ,axis = 1)
+mean_col = np.expand_dims(mean_col ,axis = 1)
 
-# ## White area detecter 
+## White area detecter 
 
-# ident = np.ones(5)
-# out = []
-# for row in xtrain:
-#     pic_values = []
-#     row = np.reshape(row,(28,28))
+ident = np.ones(5)
+out = []
+for row in xtrain:
+    pic_values = []
+    row = np.reshape(row,(28,28))
     
-#     for i in range(24):
-#         for j in range(24):
+    for i in range(24):
+        for j in range(24):
             
-#             pic_values.append(np.sum(ident * row[i:i+5,j:j+5]))
+            pic_values.append(np.sum(ident * row[i:i+5,j:j+5]))
             
-#     out.append(np.max(pic_values))
+    out.append(np.max(pic_values))
 
-# out = np.asarray(out).reshape(-1,1)
-# white_area_detect = norm.transform(out.T).T
+out = np.asarray(out).reshape(-1,1)
+white_area_detect = norm.transform(out.T).T
 
-# # max height see below for test
-# xheight = 784 - ((xtrain!=0).argmax(axis=1))
-# xheight = np.expand_dims(xheight ,axis = 1)
+# max height see below for test
+xheight = 784 - ((xtrain!=0).argmax(axis=1))
+xheight = np.expand_dims(xheight ,axis = 1)
 
-# #maxspread
+#maxspread
 
-# xflip = np.flip(xtrain, axis = 1)
-# xspread =  784 -((xflip!=0).argmax(axis=1)) - ((xtrain!=0).argmax(axis=1))
-# xspread = np.expand_dims(xspread ,axis = 1)
+xflip = np.flip(xtrain, axis = 1)
+xspread =  784 -((xflip!=0).argmax(axis=1)) - ((xtrain!=0).argmax(axis=1))
+xspread = np.expand_dims(xspread ,axis = 1)
 
-# ##Tall Short binary:  1(aiming for sandels) if it's tall or short, 
-# ##                    0 (aimming for shoes) if it's medium 
-# #                       (roughly 80% threshold)
+##Tall Short binary:  1(aiming for sandels) if it's tall or short, 
+##                    0 (aimming for shoes) if it's medium 
+#                       (roughly 80% threshold)
 
-# small = (xspread < 290)
-# tall = (xspread > 480)
-# BinaryTallShort = (small * 1) + (tall * 1)
-
-
-# #finally add the extra columns
-# xtrain = np.concatenate((xtrain
-#                         ,mean_col
-#                         ,horz_whitestrip_detect_col
-#                         ,white_area_detect
-#                         ,xheight
-#                         ,xspread
-#                         ,BinaryTallShort)
-#                         ,axis = 1)
+small = (xspread < 290)
+tall = (xspread > 480)
+BinaryTallShort = (small * 1) + (tall * 1)
 
 
-# ###########################################################  
-# c_opts = [.01 , .1, 1, 10, 100, 1000]
-# score_c = dict()
-# averages_c = [] 
+#finally add the extra columns
+xtrain = np.concatenate((xtrain
+                        ,mean_col
+                        ,horz_whitestrip_detect_col
+                        ,white_area_detect
+                        ,xheight
+                        ,xspread
+                        ,BinaryTallShort)
+                        ,axis = 1)
 
-# for c in c_opts:
-#     svc = svm.SVC(C= c)
+
+###########################################################  
+c_opts = [.01 , .1, 1, 10, 100, 1000]
+score_c = dict()
+averages_c = [] 
+
+for c in c_opts:
+    svc = svm.SVC(C= c)
     
-#     scores = skms.cross_validate(svc, xtrain, ytrain, cv=5,
-#                                  scoring=('accuracy'),
-#                                  return_train_score=False)
-#     score_c[c] = scores  
+    scores = skms.cross_validate(svc, xtrain, ytrain, cv=5,
+                                  scoring=('accuracy'),
+                                  return_train_score=False)
+    score_c[c] = scores  
 
-#     averages_c.append(np.average(score_c[c]['test_score']))
+    averages_c.append(np.average(score_c[c]['test_score']))
     
-#    # the winner is c = 10 or above 
-# ##############################################################################
+    # the winner is c = 10 or above 
+##############################################################################
    
-# kern = ['linear', 'poly', 'rbf', 'sigmoid'] 
+kern = ['linear', 'poly', 'rbf', 'sigmoid'] 
 
-# score_kern = dict()
-# averages_kern = []
+score_kern = dict()
+averages_kern = []
 
-# for k in kern:
-#     svc = svm.SVC(C= 10 , kernel = k)
+for k in kern:
+    svc = svm.SVC(C= 10 , kernel = k)
     
-#     scores = skms.cross_validate(svc, xtrain, ytrain, cv=5,
-#                                  scoring=('accuracy'),
-#                                  return_train_score=False)
+    scores = skms.cross_validate(svc, xtrain, ytrain, cv=5,
+                                  scoring=('accuracy'),
+                                  return_train_score=False)
     
-#     score_kern[k] = scores
+    score_kern[k] = scores
       
-#     averages_kern.append(np.average(score_kern[k]['test_score']))   
+    averages_kern.append(np.average(score_kern[k]['test_score']))   
     
-    # The winner is 'rbf'
+    The winner is 'rbf'
 ########################################################################
 
 #ROC curves
